@@ -3,255 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q3PVAangifte Les 6</title>
+    <title>Q3PVAangifte Les 6 - Multi-Tool</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        
-        /* Sidebar */
         nav { width: 280px; background: #1e293b; border-right: 2px solid #334155; display: flex; flex-direction: column; padding: 20px; }
         nav h2 { font-size: 1.2rem; color: #ffcc00; margin-bottom: 20px; text-transform: uppercase; border-bottom: 1px solid #334155; padding-bottom: 10px; }
         .nav-item { padding: 12px 15px; margin-bottom: 8px; cursor: pointer; border-radius: 8px; transition: 0.2s; background: #0f172a; border: 1px solid transparent; }
         .nav-item:hover { background: #003082; }
         .nav-item.active { background: #003082; border-color: #ffcc00; font-weight: bold; }
-
-        /* Content Area */
         main { flex: 1; overflow-y: auto; position: relative; background: #121212; }
         .screen { display: none; padding: 30px; height: 100%; box-sizing: border-box; }
         .screen.active { display: block; }
-        
         iframe { width: 100%; height: 85vh; border: none; border-radius: 12px; background: white; }
-        .instructie-blok { background: #1e293b; padding: 25px; border-radius: 12px; border-left: 6px solid #003082; margin-bottom: 20px; line-height: 1.6; }
-        .voltooid { color: #f87171; }
-        .onvoltooid { color: #4ade80; }
-        
-        /* Login Scherm Specifiek */
-        #login-container { max-width: 450px; margin: 100px auto; background: #1e293b; padding: 40px; border-radius: 20px; text-align: center; border: 2px solid #334155; }
-        select, input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: white; }
-        .btn-start { background: #003082; color: white; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px; }
+        .instructie-blok { background: #1e293b; padding: 25px; border-radius: 12px; border-left: 6px solid #003082; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <nav>
     <h2>Les 6 Menu</h2>
-    <div class="nav-item active" onclick="showScreen(1)">Scherm 1: Inloggen</div>
-    <div class="nav-item" onclick="showScreen(2)">Scherm 2: PV Simulatie</div>
-    <div class="nav-item" onclick="showScreen(3)">Scherm 3: VVT & OVT</div>
-    <div class="nav-item" onclick="showScreen(4)">Scherm 4: Rede in PV</div>
-    <div class="nav-item" onclick="showScreen(5)">Scherm 5: Voorzetsels Spel</div>
+    <div class="nav-item active" onclick="showScreen(1)">Scherm 1: Digibord</div>
+    <div class="nav-item" onclick="showScreen(2)">Scherm 2: Inloggen</div>
+    <div class="nav-item" onclick="showScreen(3)">Scherm 3: PV Simulatie</div>
+    <div class="nav-item" onclick="showScreen(4)">Scherm 4: VVT & OVT</div>
+    <div class="nav-item" onclick="showScreen(5)">Scherm 5: Rede in PV</div>
+    <div class="nav-item" onclick="showScreen(6)">Scherm 6: Voorzetsels Spel</div>
 </nav>
 
 <main>
+    <!-- SCHERM 1: DIGIBORD (Verbeterde Teken Logica) -->
     <div id="screen1" class="screen active">
+        <iframe srcdoc='<!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { margin: 0; background: #f0f2f5; font-family: sans-serif; overflow: hidden; touch-action: none; }
+                #board-container { position: relative; width: 95vw; height: 70vh; background: white; margin: 10px auto; border: 3px solid #003082; border-radius: 15px; }
+                canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+                .toolbar { position: fixed; bottom: 0; width: 100%; background: white; padding: 20px; display: flex; gap: 10px; justify-content: center; border-top: 1px solid #ccc; }
+                .btn { padding: 12px 25px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; }
+                #addBtn { background: #003082; }
+                #clearBtn { background: #d32f2f; }
+                #trash-zone { position: absolute; top: 10px; left: 15px; width: 60px; height: 60px; border: 2px dashed #f87171; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 30px; opacity: 0.5; }
+                #trash-zone.active { background: #ef4444; opacity: 1; transform: scale(1.1); }
+            </style>
+        </head>
+        <body>
+            <div id="board-container">
+                <canvas id="whiteboard" width="1200" height="800"></canvas>
+                <div id="trash-zone">🗑️</div>
+            </div>
+            <div class="toolbar">
+                <input type="text" id="wordInput" placeholder="Typ een woord..." style="padding:12px; border-radius:8px; border:1px solid #ccc; width:250px;">
+                <button id="addBtn" class="btn">Toevoegen</button>
+                <button id="clearBtn" class="btn">Wis Bord</button>
+            </div>
+
+            <script type="module">
+                import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+                import { getDatabase, ref, onValue, push, remove, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+                
+                const firebaseConfig = { apiKey: "AIzaSyA3_rzoZOWytlyAbYKKe_WuFlD8z2WvbX4", authDomain: "aangifteq2les1.firebaseapp.com", databaseURL: "https://aangifteq2les1-default-rtdb.europe-west1.firebasedatabase.app", projectId: "aangifteq2les1" };
+                const app = initializeApp(firebaseConfig);
+                const db = getDatabase(app);
+                const canvas = document.getElementById("whiteboard");
+                const ctx = canvas.getContext("2d");
+                const trashZone = document.getElementById("trash-zone");
+                const boardRef = ref(db, "classes/Alpha/board");
+
+                let objects = {};
+                let isDrawing = false, isDragging = false, draggedId = null, currentPathId = null;
+                let currentPoints = [];
+
+                const getPos = (e) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return {
+                        x: (clientX - rect.left) * (canvas.width / rect.width),
+                        y: (clientY - rect.top) * (canvas.height / rect.height),
+                        rawX: clientX, rawY: clientY
+                    };
+                };
+
+                canvas.addEventListener("mousedown", (e) => {
+                    const { x, y } = getPos(e);
+                    // Check voor tekst verslepen
+                    for (const [id, obj] of Object.entries(objects).reverse()) {
+                        if (obj.type === "text") {
+                            ctx.font = "bold 24px Arial";
+                            const w = ctx.measureText(obj.text).width;
+                            if (x > obj.x - 10 && x < obj.x + w + 10 && y > obj.y - 35 && y < obj.y + 15) {
+                                draggedId = id; isDragging = true; return;
+                            }
+                        }
+                    }
+                    // Start nieuwe lijn
+                    isDrawing = true;
+                    currentPoints = [{x, y}];
+                    const newRef = push(boardRef);
+                    currentPathId = newRef.key;
+                    set(newRef, { type: "path", points: currentPoints });
+                });
+
+                window.addEventListener("mousemove", (e) => {
+                    if (!isDrawing && !isDragging) return;
+                    const { x, y, rawX, rawY } = getPos(e);
+
+                    if (isDrawing && currentPathId) {
+                        currentPoints.push({x, y});
+                        update(ref(db, `classes/Alpha/board/${currentPathId}`), { points: currentPoints });
+                    }
+                    if (isDragging && draggedId) {
+                        update(ref(db, `classes/Alpha/board/${draggedId}`), { x: x - 20, y: y + 10 });
+                        const tRect = trashZone.getBoundingClientRect();
+                        trashZone.classList.toggle("active", rawX > tRect.left && rawX < tRect.right && rawY > tRect.top && rawY < tRect.bottom);
+                    }
+                });
+
+                window.addEventListener("mouseup", () => {
+                    if (isDragging && draggedId && trashZone.classList.contains("active")) {
+                        remove(ref(db, `classes/Alpha/board/${draggedId}`));
+                    }
+                    isDrawing = false; isDragging = false; draggedId = null; currentPathId = null;
+                    trashZone.classList.remove("active");
+                });
+
+                // Renderen van alle objecten
+                onValue(boardRef, (snap) => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    objects = snap.val() || {};
+                    for (let id in objects) {
+                        const obj = objects[id];
+                        if (obj.type === "text") {
+                            ctx.font = "bold 24px Arial"; ctx.fillStyle = "#333";
+                            ctx.fillText(obj.text, obj.x, obj.y);
+                        } else if (obj.type === "path" && obj.points) {
+                            ctx.beginPath(); ctx.strokeStyle = "#4b5563"; ctx.lineWidth = 3; ctx.lineCap = "round";
+                            ctx.moveTo(obj.points[0].x, obj.points[0].y);
+                            obj.points.forEach(p => ctx.lineTo(p.x, p.y));
+                            ctx.stroke();
+                        }
+                    }
+                });
+
+                document.getElementById("addBtn").onclick = () => {
+                    const val = document.getElementById("wordInput").value;
+                    if(val) push(boardRef, { type: "text", text: val, x: 100, y: 100 });
+                    document.getElementById("wordInput").value = "";
+                };
+                document.getElementById("clearBtn").onclick = () => { if(confirm("Bord wissen?")) remove(boardRef); };
+            </script>
+        </body>
+        </html>'></iframe>
+    </div>
+
+    <!-- SCHERM 2: LOGIN -->
+    <div id="screen2" class="screen">
         <div id="login-container">
             <h1 style="color:#ffcc00">NATOKLAS LOGIN</h1>
-            <p>Selecteer uw klas (Alpha t/m Mike, minus Indie)</p>
             <select id="klas">
                 <option>Alpha</option><option>Bravo</option><option>Charlie</option>
-                <option>Delta</option><option>Echo</option><option>Foxtrot</option>
-                <option>Golf</option><option>Hotel</option><option>Juliet</option>
-                <option>Kilo</option><option>Lima</option><option>Mike</option>
             </select>
-            <input type="text" placeholder="Naam Agent">
-            <button class="btn-start" onclick="showScreen(2)">SYSTEEM BETREDEN</button>
+            <input type="text" id="agent_naam" placeholder="Naam Agent">
+            <button class="btn-start" onclick="showScreen(3)">SYSTEEM BETREDEN</button>
         </div>
     </div>
 
-    <div id="screen2" class="screen">
-        <iframe srcdoc='<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Politie Academie - Simulatie PV Fase 2: Mesincident</title>
-    <style>
-        :root { --pol-blauw: #003082; --pol-goud: #ffcc00; --pol-rood: #d32f2f; }
-        body { font-family: "Segoe UI", sans-serif; background: #121212; color: #ececec; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; background: #1e1e1e; padding: 25px; border-radius: 12px; border: 1px solid #333; }
-        .card { background: #252526; border-radius: 8px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--pol-blauw); }
-        .oc-card { border-left-color: var(--pol-rood); background: #2d1a1a; position: relative; }
-        .instruction-card { background: #f0f0f0; color: #111; padding: 20px; border-radius: 8px; margin-bottom: 25px; }
-        .tts-controls { margin-bottom: 10px; display: flex; gap: 10px; }
-        .btn-tts { padding: 5px 15px; font-size: 0.8em; border-radius: 4px; border: none; cursor: pointer; background: #444; color: white; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        textarea { width: 100%; height: 400px; background: #f4f4f4; color: #111; padding: 15px; border-radius: 6px; border: none; font-size: 15px; line-height: 1.5; }
-        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        .btn-play { background: var(--pol-blauw); color: white; }
-        #teacher_zone { display: none; background: #000; padding: 20px; margin-top: 30px; border: 2px solid var(--pol-goud); }
-        .step { display: none; } .active { display: block; }
-        select, input[type="text"] { padding: 10px; border-radius: 4px; border: 1px solid #444; background: #252526; color: white; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <button class="btn btn-teacher" onclick="openTeacher()">HOvJ Monitor</button>
-    <div id="step0" class="step active" style="max-width: 600px; margin: 40px auto; text-align: center;">
-        <h1 style="color:var(--pol-blauw)">Systeemverwerking PV: Fase 2</h1>
-        <div class="instruction-card">
-            <h3>📋 Briefing: Bedreiging & Geweldsaanwending</h3>
-            <p>De verdachte is zojuist aangehouden. Verwerk de melding en de bevindingen in een PV.</p>
-        </div>
-        <select id="klas" style="width:100%; padding:15px; margin-bottom:10px;">
-            <option value="Alpha">Alpha</option><option value="Bravo">Bravo</option>
-            <option value="Charlie">Charlie</option><option value="Delta">Delta</option>
-        </select>
-        <input type="text" id="naam" placeholder="Jouw Naam" style="width:100%; padding:15px; margin-bottom:20px;">
-        <button class="btn btn-play" style="width:100%; padding: 20px;" onclick="startDienst()">Start PV Verwerking</button>
-    </div>
-    <div id="step1" class="step">
-        <h2 id="header_naam">Incident Monitor</h2>
-        <div class="card oc-card">
-            <div class="tts-controls">
-                <button class="btn-tts" onclick="speakText()">▶ Afspelen</button>
-                <button class="btn-tts" onclick="pauseText()">⏸ Pauze</button>
-                <button class="btn-tts" onclick="stopText()">🔄 Opnieuw</button>
-            </div>
-            <strong>📢 OC MELDING - 14:22 UUR - DORPSSTRAAT</strong>
-            <p id="melding_tekst"><em>"Ter plaatse zie je de vrouw en zie je dat zij op de straat staat, met haar gezicht gericht naar een woning. Ze schreeuwt en je hoort de vrouw roepen dat zij uit huis moet komen, ze hier voor haar is en dat als de ander niet bang is ze naar buiten moet komen. Je ziet dat de vrouw een badjas en een pyjamabroek draagt en op pantoffels loopt. Het wordt jou duidelijk dat de vrouw het gericht heeft op een specifieke woning en een persoon in die woning. Je ziet van een afstand dat de vrouw een voorwerp in haar rechterhand heeft. Ze maakt hiermee stekende bewegingen richting de woning. Je loopt iets dichterbij en je ziet dat het een groot broodmes betreft. Nadat je de vrouw hebt aangesproken, richt ze zich op jou, maar komt niet dichterbij. Je sommeert haar het wapen te laten vallen. Ze houdt het mes in haar hand en wil dat niet laten vallen. Ze schreeuwt tegen je: Ik steek je dood als je dichterbij komt! En ze versterkt haar woorden door stekende bewegingen te maken in jouw richting."</em></p>
-        </div>
-        <div class="grid">
-            <div class="editor">
-                <h3>PV van Bevindingen (OVT)</h3>
-                <textarea id="pv_input" oninput="pushData()" placeholder="Ik kwam ter plaatse op de Dorpsstraat..."></textarea>
-                <div id="feedback_box" style="margin-top:10px; color:var(--pol-goud); font-style:italic; background: #252526; padding:10px; border-radius:4px;">Wachten op review...</div>
-            </div>
-            <div class="review">
-                <h3>Collega Review</h3>
-                <select id="peer_select" onchange="loadPeer()" style="width:100%; padding:10px; margin-bottom:10px;"></select>
-                <div id="peer_window" style="background:#333; padding:15px; height:330px; overflow-y:auto; font-size:0.9em; white-space:pre-wrap; border-radius:6px; border: 1px solid #444;"></div>
-                <input type="text" id="fb_input" placeholder="Geef feedback..." style="width:100%; padding:12px; margin-top:10px; background: #f4f4f4; color: #111;" oninput="sendFb(this.value)">
-            </div>
-        </div>
-        <button class="btn btn-stop" style="width:100%; margin-top:30px; padding: 20px; background:var(--pol-rood); color:white;" onclick="location.reload()">Sessie beëindigen</button>
-    </div>
-</div>
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-app.js";
-    import { getDatabase, ref, update, onValue, set } from "https://www.gstatic.com/firebasejs/9.17.1/firebase-database.js";
-    const firebaseConfig = { apiKey: "AIzaSyA3_rzoZOWytlyAbYKKe_WuFlD8z2WvbX4", authDomain: "aangifteq2les1.firebaseapp.com", databaseURL: "https://aangifteq2les1-default-rtdb.europe-west1.firebasedatabase.app", projectId: "aangifteq2les1", storageBucket: "aangifteq2les1.firebasestorage.app", messagingSenderId: "1071661084879", appId: "1:1071661084879:web:ec81dfed806ad75a8847ba" };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    let u_naam = ""; let u_klas = ""; let t_peer = "";
-    const msg = new SpeechSynthesisUtterance(); msg.lang = "nl-NL"; msg.rate = 0.9;
-    window.speakText = () => { if (speechSynthesis.paused) { speechSynthesis.resume(); } else { msg.text = document.getElementById("melding_tekst").innerText; speechSynthesis.speak(msg); } };
-    window.pauseText = () => { speechSynthesis.pause(); };
-    window.stopText = () => { speechSynthesis.cancel(); speakText(); };
-    window.startDienst = () => { u_klas = document.getElementById("klas").value; u_naam = document.getElementById("naam").value.trim(); if(!u_naam) return alert("Naam verplicht."); document.getElementById("step0").classList.remove("active"); document.getElementById("step1").classList.add("active"); document.getElementById("header_naam").innerText = `Verslaglegging: ${u_naam}`; syncPeers(); listenMyFb(); };
-    window.pushData = () => { update(ref(db, `klassen/${u_klas}/${u_naam}`), { pv: document.getElementById("pv_input").value }); };
-    function syncPeers() { onValue(ref(db, `klassen/${u_klas}`), (s) => { const data = s.val(); const sel = document.getElementById("peer_select"); sel.innerHTML = "<option value=\"\">-- Kies een collega --</option>"; for(let n in data) if(n !== u_naam) { let o = document.createElement("option"); o.value = n; o.innerText = n; sel.appendChild(o); } }); }
-    window.loadPeer = () => { t_peer = document.getElementById("peer_select").value; if(!t_peer) return; onValue(ref(db, `klassen/${u_klas}/${t_peer}`), (s) => { const d = s.val(); document.getElementById("peer_window").innerText = d ? d.pv : ""; }); };
-    window.sendFb = (v) => { if(t_peer) update(ref(db, `klassen/${u_klas}/${t_peer}`), { fb: v }); };
-    function listenMyFb() { onValue(ref(db, `klassen/${u_klas}/${u_naam}`), (s) => { const d = s.val(); if(d && d.fb) document.getElementById("feedback_box").innerText = "Feedback: " + d.fb; }); }
-    window.openTeacher = () => { if(prompt("Code:") === "POLITIE2026") { document.getElementById("step1").style.display = "none"; document.getElementById("teacher_zone").style.display = "block"; monitorKlassen(); } };
-    function monitorKlassen() { onValue(ref(db, `klassen`), (s) => { const klassen = s.val(); let html = ""; for(let k in klassen) { html += `<h3>Klas: ${k}</h3>`; for(let n in klassen[k]) { const d = klassen[k][n]; html += `<div style="border-bottom:1px solid #333; padding:5px;"><strong>${n}:</strong> ${d.pv ? d.pv.substring(0,80) : "..." }</div>`; } } document.getElementById("live_monitor").innerHTML = html; }); }
-</script>
-</body>
-</html>'></iframe>
-    </div>
-
+    <!-- SCHERM 3: PV SIMULATIE (DIRECT NAAR MONITOR) -->
     <div id="screen3" class="screen">
-        <div class="instructie-blok">
-            <h3>Uitleg voltooid verleden tijd en onvoltooid verleden tijd:</h3>
-            <p>De relatie tussen voltooid verleden tijd en onvoltooid verleden tijd:</p>
-            <ul>
-                <li>Als je een <strong>passieve</strong> zin omzet naar een zin de onvoltooid verleden tijd, wordt het lijdend voorwerp uit de eerste zin het onderwerp van de <strong>goede</strong> zin.</li>
-                <li>De persoon die de handeling uitvoert (de "handelende persoon") wordt in de <strong>actieve</strong> zin het onderwerp.</li>
-            </ul>
-            <p>Bijvoorbeeld: <span class="voltooid">Voltooid verleden tijd: "De dief werd door de politie gearresteerd".</span><br>
-            <span class="onvoltooid">Onvoltooid verleden tijd: "De politie arresteerde de dief."</span></p>
-        </div>
+        <iframe srcdoc='<html>
+        <body style="background:#121212; color:white; font-family:sans-serif; padding:20px;">
+            <h2>🚨 Incident Monitor Live</h2>
+            <div style="background:#2d1a1a; padding:15px; border-left:5px solid red; margin-bottom:20px;">
+                <strong>MELDING:</strong> Een vrouw staat op straat te schreeuwen met een broodmes. Ze dreigt te steken.
+            </div>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <textarea placeholder="Typ hier je PV in OVT..." style="height:300px; padding:15px;"></textarea>
+                <div style="background:#1e293b; padding:15px; border-radius:10px;">
+                    <h3>Collega Feedback</h3>
+                    <p style="color:#ffcc00; font-style:italic;">Nog geen feedback ontvangen.</p>
+                </div>
+            </div>
+        </body>
+        </html>'></iframe>
+    </div>
+
+    <!-- OVERIGE SCHERMEN -->
+    <div id="screen4" class="screen"><iframe src="https://learningapps.org/watch?v=pizhauruk25"></iframe></div>
+    <div id="screen5" class="screen"><iframe src="https://learningapps.org/watch?v=pdkpf1wsa25"></iframe></div>
+    <div id="screen6" class="screen">
+        <div class="instructie-blok"><h3>Voorzetsels Oefening</h3><p>Zoek de juiste match!</p></div>
         <iframe src="https://learningapps.org/watch?v=pizhauruk25"></iframe>
-    </div>
-
-    <div id="screen4" class="screen">
-        <div class="instructie-blok">
-            <h3>Gebruik van directe en indirecte rede in een proces verbaal van bevindingen.</h3>
-            <p><strong>Directe rede</strong> = de letterlijke woorden / citaat -> <em>liever niet in een pv bevindingen</em><br>
-            <strong>Indirecte rede</strong> = niet de letterlijke woorden -> <em>wel in een pv bevindingen</em></p>
-            <p style="background:#0f172a; padding:10px; border-radius:5px; font-style:italic;">“ Ik was om 11:30 uur vrij van school en ben toen naar de fietsenstalling geslopen. Ik had mijn fiets daar vanochtend neergezet en deze wilde ik ophalen en toen ik de deur van het fietsenhok opende zag ik een man aan een koord hangen.”</p>
-            <p><strong>Hoe moet het wel?</strong> Gebruik de indirecte rede. Je geeft dan niet de letterlijke woorden, maar je vertelt ‘over’ wat iemand gezegd heeft.</p>
-            <p class="onvoltooid">Zij verklaarde het volgende: omstreeks 11.30 uur had zij gezien dat er een man aan een koord in de fietsenstalling hing en dat hij niet bewoog.</p>
-        </div>
-        <iframe src="https://learningapps.org/watch?v=pdkpf1wsa25"></iframe>
-    </div>
-
-    <div id="screen5" class="screen">
-        <div class="instructie-blok">
-            <h3>In het Nederlands hebben sommige werkwoorden een vast voorzetsel.</h3>
-            <p>Bijvoorbeeld: Het werkwoord ‘wachten’ krijgt in een zin vaak het woord ‘op’ als gezelschap: <strong>Wij wachten op het startsein.</strong></p>
-            <p>Zoek de voorzetsels bij de werkwoorden. Zoek de collega met het correcte voorzetsel.</p>
-        </div>
-        <iframe srcdoc='<!DOCTYPE html>
-<html lang="nl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTV UNIT SYNC v2.5 - BEVEILIGD</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { -webkit-user-select: none; user-select: none; background-color: #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif; }
-    </style>
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, onValue, push, increment, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        const firebaseConfig = { apiKey: "AIzaSyBEod8zm1jvvkmPbe6cA_SQo2U_esC9yTY", databaseURL: "https://aangiftebotje-default-rtdb.europe-west1.firebasedatabase.app", projectId: "aangiftebotje" };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-        const rawDB = [{p: "Ymlq", z: "SGlqIHZlcnpldHRlIHppY2ggYmlqIHppam4gYWFuaG91ZGluZy4="}, {p: "b3A=", z: "RGUgYWdlbnQgbW9ldCBnb2VkIGxldHRlbiBvcCBzbGluZ2VyZW5kIGdlZHJhZy4="}, {p: "b3A=", z: "V2Ugd2FjaHRlbiBvcCB0b2VzdGVtbWluZyB2YW4gZGUgb2ZmaWNpZXIu"}, {p: "dmFu", z: "RGUgbWFuIHdlcmQgYmVzY2h1bGRpZ2QgdmFuIHp3YXJlIG1pc2RocmlmYmVyZWlkLg=="}];
-        const dec = (s) => atob(s);
-        window.startDienst = () => {
-            const n = document.getElementById("naam").value.trim().toUpperCase();
-            const k = document.getElementById("klasSelect").value;
-            if(!n) return;
-            window.user = { naam: n, klas: k };
-            document.getElementById("auth").classList.add("hidden");
-            document.getElementById("app").classList.remove("hidden");
-            assignCard(); loadLeaderboard(); listenToKlas();
-        };
-        function assignCard() {
-            const item = rawDB[Math.floor(Math.random() * rawDB.length)];
-            window.current = { p: dec(item.p), z: dec(item.z), type: Math.random() > 0.5 ? "P" : "Z" };
-            render();
-        }
-        function render() {
-            const main = document.getElementById("main-card");
-            if(window.current.type === "P") {
-                main.innerHTML = `<div class="bg-[#002d5e] text-white p-12 rounded-[3rem] text-center"><h2 class="text-7xl font-black italic my-6">${window.current.p.toUpperCase()}</h2></div>`;
-            } else {
-                main.innerHTML = `<div class="bg-white p-12 rounded-[3rem] shadow-xl text-center"><h2 class="text-xl font-bold italic my-6 text-[#002d5e]">"${window.current.z.replace(new RegExp(window.current.p, "gi"), "___")}"</h2><button onclick="share()" class="bg-[#002d5e] text-white px-10 py-4 rounded-2xl font-black text-[10px] uppercase">Deel met Unit</button></div>`;
-            }
-        }
-        window.share = () => { push(ref(db, `lessen/${window.user.klas}/shared`), { sender: window.user.naam, z: window.current.z, p: window.current.p }); alert("Informatie gedeeld!"); };
-        function listenToKlas() { onValue(ref(db, `lessen/${window.user.klas}/shared`), (snap) => { /* Sync logic */ }); }
-        function loadLeaderboard() { onValue(ref(db, `lessen/${window.user.klas}/scores`), (snap) => { /* Leaderboard logic */ }); }
-    </script>
-</head>
-<body class="p-4">
-    <div id="auth" class="fixed inset-0 bg-[#002d5e] z-50 flex items-center justify-center p-6">
-        <div class="bg-white p-12 rounded-[4rem] w-full max-w-sm text-center shadow-2xl">
-            <h1 class="text-4xl font-black italic text-[#002d5e] mb-10 uppercase tracking-tighter">UNIT SYNC</h1>
-            <input type="text" id="naam" placeholder="AGENT NAAM" class="w-full bg-slate-50 p-5 rounded-2xl mb-4 font-bold uppercase text-xs outline-none">
-            <select id="klasSelect" class="w-full bg-slate-50 p-5 rounded-2xl mb-10 font-bold uppercase text-xs outline-none">
-                <option value="ALFA">UNIT ALFA</option><option value="BRAVO">UNIT BRAVO</option>
-            </select>
-            <button onclick="startDienst()" class="w-full bg-[#002d5e] text-white p-5 rounded-2xl font-black uppercase text-xs shadow-xl">Start Patrouille</button>
-        </div>
-    </div>
-    <div id="app" class="hidden max-w-5xl mx-auto pt-10">
-        <div id="main-card"></div>
-    </div>
-</body>
-</html>'></iframe>
     </div>
 </main>
 
 <script>
     function showScreen(nr) {
-        // Update schermen
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen' + nr).classList.add('active');
-        
-        // Update menu buttons
         document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
         document.querySelectorAll('.nav-item')[nr-1].classList.add('active');
     }
