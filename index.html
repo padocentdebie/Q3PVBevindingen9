@@ -62,7 +62,7 @@
             <script type="module">
                 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
                 import { getDatabase, ref, onValue, push, remove, update, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-                const firebaseConfig = { apiKey: "AIzaSyA3_rzoZOWytlyAbYKKe_WuFlD8z2WvbX4", authDomain: "aangifteq2les1.firebaseapp.com", databaseURL: "https://aangifteq2les1-default-rtdb.europe-west1.firebasedatabase.app", projectId: "aangifteq2les1" };
+                const firebaseConfig = { apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew", databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app", projectId: "decoroefening" };
                 const app = initializeApp(firebaseConfig); const db = getDatabase(app);
                 const canvas = document.getElementById("whiteboard"); const ctx = canvas.getContext("2d");
                 const boardRef = ref(db, "classes/Alpha/board");
@@ -153,7 +153,7 @@
         </div>
     </div>
 
-    <!-- SCHERM 3: PV SIMULATIE (VERBETERD: INLEVEREN + LIVEFEED ZONDER HINDER) -->
+    <!-- SCHERM 3: PV SIMULATIE -->
     <div id="screen3" class="screen">
         <iframe id="pvSimFrame" srcdoc='<!DOCTYPE html>
 <html lang="nl">
@@ -191,18 +191,14 @@
     </div>
     
     <div class="two-columns">
-        <!-- Linker kolom: eigen PV + inleveren -->
         <div class="left-panel">
             <div class="card">
                 <h3>📝 Jouw PV (Proces-verbaal van bevindingen)</h3>
-                <textarea id="myPV" placeholder="Schrijf hier jouw PV in de verleden tijd (OVT)...&#10;Voorbeeld:&#10;Ik kwam ter plaatse en zag een vrouw die schreeuwde..."></textarea>
+                <textarea id="myPV" placeholder="Schrijf hier jouw PV in de verleden tijd (OVT)..."></textarea>
                 <button class="btn-submit" id="submitBtn">📤 Inleveren</button>
                 <div id="submitStatus" class="status-msg"></div>
-                <div style="font-size: 12px; color:#94a3b8; margin-top: 8px;">💡 Tip: schrijf in de verleden tijd. Klik op Inleveren om je werk te delen met de klas.</div>
             </div>
         </div>
-        
-        <!-- Rechter kolom: Live feed van ingeleverde PV's + feedback mogelijkheid -->
         <div class="right-panel">
             <div class="card">
                 <h3>📡 Live Feed - Ingeleverde PV's</h3>
@@ -215,156 +211,45 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, push, onValue, set, get, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyA3_rzoZOWytlyAbYKKe_WuFlD8z2WvbX4",
-            authDomain: "aangifteq2les1.firebaseapp.com",
-            databaseURL: "https://aangifteq2les1-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "aangifteq2les1"
-        };
+        import { getDatabase, ref, push, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        const firebaseConfig = { apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew", databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app", projectId: "decoroefening" };
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        
-        // Agent naam ophalen uit localStorage (van login)
         let currentAgent = localStorage.getItem("currentAgentName") || "Onbekend";
         const submissionsRef = ref(db, "pv_submissions");
-        
-        // Hulp om dubbele automatische reloads te voorkomen: we houden lokale state van de tekst
-        let typingTimeout = null;
         const textarea = document.getElementById("myPV");
-        
-        // Bewaar concept lokaal (zonder database te vervuilen)
-        if (localStorage.getItem(`draft_${currentAgent}`)) {
-            textarea.value = localStorage.getItem(`draft_${currentAgent}`);
-        }
-        
-        // Auto-save concept (geen hinderlijke reloads, alleen lokaal)
-        textarea.addEventListener("input", () => {
-            if (typingTimeout) clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {
-                localStorage.setItem(`draft_${currentAgent}`, textarea.value);
-            }, 500);
-        });
-        
-        // INLEVEREN functie
+
         document.getElementById("submitBtn").addEventListener("click", async () => {
             const pvText = textarea.value.trim();
-            if (!pvText) {
-                document.getElementById("submitStatus").innerHTML = "⚠️ Voer eerst je PV in voordat je inlevert.";
-                setTimeout(() => document.getElementById("submitStatus").innerHTML = "", 2000);
-                return;
-            }
-            
-            // Bewaar de inzending in Firebase
-            const newSubmission = {
-                agent: currentAgent,
-                text: pvText,
-                timestamp: Date.now(),
-                feedbacks: {}  // object met feedback per collega
-            };
-            
-            try {
-                await push(submissionsRef, newSubmission);
-                document.getElementById("submitStatus").innerHTML = "✅ Ingeleverd! Je PV is zichtbaar in de live feed.";
-                setTimeout(() => document.getElementById("submitStatus").innerHTML = "", 3000);
-                // Wis concept na inlevering (optioneel)
-                localStorage.removeItem(`draft_${currentAgent}`);
-            } catch(e) {
-                document.getElementById("submitStatus").innerHTML = "❌ Fout bij inleveren. Probeer opnieuw.";
-                console.error(e);
-            }
+            if (!pvText) return;
+            await push(submissionsRef, { agent: currentAgent, text: pvText, timestamp: Date.now(), feedbacks: {} });
+            document.getElementById("submitStatus").innerHTML = "✅ Ingeleverd!";
         });
-        
-        // Feedback geven op een specifieke submission
-        window.giveFeedback = async (submissionId, agentTo, currentFeedbackText) => {
-            const fbText = currentFeedbackText.trim();
-            if (!fbText) return;
-            
-            const submissionRef = ref(db, `pv_submissions/${submissionId}/feedbacks/${currentAgent}`);
-            try {
-                await set(submissionRef, {
-                    from: currentAgent,
-                    feedback: fbText,
-                    timestamp: Date.now()
-                });
-                // Clear input field visueel (via DOM update later)
-            } catch(e) { console.error("Feedback error", e); }
+
+        window.giveFeedback = async (submissionId, agentTo, fbText) => {
+            if (!fbText.trim()) return;
+            await set(ref(db, `pv_submissions/${submissionId}/feedbacks/${currentAgent}`), { from: currentAgent, feedback: fbText, timestamp: Date.now() });
         };
-        
-        // Live feed weergeven (geen hinder voor typende studenten - volledig aparte kolom)
+
         onValue(submissionsRef, (snapshot) => {
             const submissions = snapshot.val();
             const feedDiv = document.getElementById("liveFeed");
-            if (!submissions) {
-                feedDiv.innerHTML = "<div style='text-align:center; color:#94a3b8;'>📭 Nog geen ingeleverde PV's...</div>";
-                return;
-            }
-            
-            // Zet om naar array en sorteer nieuwste eerst
-            const submissionsArray = Object.entries(submissions).map(([id, data]) => ({ id, ...data }));
-            submissionsArray.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-            
+            if (!submissions) return;
+            const arr = Object.entries(submissions).map(([id, data]) => ({ id, ...data })).sort((a, b) => b.timestamp - a.timestamp);
             let html = "";
-            for (let sub of submissionsArray) {
-                const feedbacksObj = sub.feedbacks || {};
-                const feedbacksList = Object.values(feedbacksObj);
-                
-                html += `
-                    <div class="submission-item" data-id="${sub.id}">
-                        <div class="submission-header">
-                            <span>👮 ${sub.agent}</span>
-                            <span>🕒 ${new Date(sub.timestamp).toLocaleTimeString()}</span>
-                        </div>
-                        <div class="submission-text">${escapeHtml(sub.text.substring(0, 500))}${sub.text.length > 500 ? '...' : ''}</div>
-                `;
-                
-                // Toon bestaande feedback
-                if (feedbacksList.length > 0) {
-                    html += `<div class="feedback-display"><strong>💬 Feedback:</strong><br>`;
-                    feedbacksList.forEach(fb => {
-                        html += `📌 <strong>${fb.from}</strong>: ${escapeHtml(fb.feedback)}<br>`;
-                    });
-                    html += `</div>`;
-                }
-                
-                // Voeg feedbackformulier toe (alleen als het niet je eigen inzending is)
-                if (sub.agent !== currentAgent) {
-                    html += `
-                        <div class="feedback-input-area" id="fb-area-${sub.id}">
-                            <input type="text" id="fb-input-${sub.id}" class="feedback-input" placeholder="Geef feedback op deze PV...">
-                            <button class="feedback-btn" onclick="giveFeedback('${sub.id}', '${sub.agent}', document.getElementById('fb-input-${sub.id}').value)">📨 Verstuur</button>
-                        </div>
-                    `;
-                } else {
-                    html += `<div style="font-size:0.7rem; color:#64748b; margin-top:6px;">🔒 Jouw eigen inzending</div>`;
-                }
+            for (let sub of arr) {
+                html += `<div class="submission-item"><strong>👮 ${sub.agent}</strong><div class="submission-text">${sub.text}</div>`;
+                if (sub.feedbacks) Object.values(sub.feedbacks).forEach(fb => html += `<div class="feedback-display">📌 ${fb.from}: ${fb.feedback}</div>`);
+                if (sub.agent !== currentAgent) html += `<div class="feedback-input-area"><input type="text" id="fb-${sub.id}" class="feedback-input"><button class="feedback-btn" onclick="giveFeedback('${sub.id}', '${sub.agent}', document.getElementById('fb-${sub.id}').value)">📨</button></div>`;
                 html += `</div>`;
             }
             feedDiv.innerHTML = html;
         });
-        
-        // Helper om XSS te voorkomen
-        function escapeHtml(str) {
-            if (!str) return "";
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            }).replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, function(c) {
-                return c;
-            });
-        }
-        
-        // toon huidige agent in console (debug)
-        console.log("Actieve agent:", currentAgent);
     </script>
 </body>
 </html>'></iframe>
     </div>
 
-    <!-- OVERIGE SCHERMEN -->
     <div id="screen4" class="screen"><iframe src="https://learningapps.org/watch?v=pizhauruk25"></iframe></div>
     <div id="screen5" class="screen"><iframe src="https://learningapps.org/watch?v=pdkpf1wsa25"></iframe></div>
     
@@ -375,59 +260,25 @@
         <head>
             <meta charset="UTF-8">
             <style>
-                body { font-family: "Segoe UI", system-ui, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; text-align: center; }
+                body { font-family: sans-serif; padding: 20px; }
                 .container { max-width: 750px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
-                h1 { color: #003082; font-size: 1.6rem; margin-bottom: 5px; }
-                .sub { color: #475569; margin-bottom: 20px; font-size: 0.9rem; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; }
-                .sentence { background: #f8fafc; padding: 20px; border-radius: 12px; font-size: 1.1rem; margin: 20px 0; line-height: 1.6; color: #1e293b; min-height: 85px; border-left: 5px solid #003082; text-align: left; }
-                .wrong-word { color: #b91c1c; background: #fee2e2; padding: 2px 6px; border-radius: 20px; font-weight: bold; display: inline-block; }
-                input { width: 65%; padding: 12px 16px; border: 2px solid #cbd5e1; border-radius: 40px; font-size: 1rem; outline: none; }
-                .btn { background: #003082; color: white; padding: 10px 24px; border: none; border-radius: 40px; cursor: pointer; margin-left: 12px; font-weight: bold; }
-                .score-board { margin-top: 35px; border-top: 2px solid #e2e8f0; padding-top: 20px; text-align: left; }
-                .leader-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
-                .feedback-area { background: #eef2ff; border-radius: 12px; padding: 10px 15px; margin-top: 15px; color: #1e3a8a; font-size: 0.85rem; }
             </style>
         </head>
         <body>
         <div class="container">
             <h1>📝 Structuurwoorden</h1>
-            <div class="sub">Kies: <strong>dus</strong> · <strong>daarom</strong> · <strong>vervolgens</strong></div>
-            <div class="sentence" id="display-sentence">🔄 Laden...</div>
-            <div>
-                <input type="text" id="answer" placeholder="Typ het juiste woord" autocomplete="off">
-                <button class="btn" onclick="checkAnswer()">Controleer</button>
-            </div>
-            <div class="feedback-area" id="directFeedback">💡 Tip: "dus"=gevolg, "daarom"=reden, "vervolgens"=tijdsvolgorde</div>
-            <div class="score-board"><div class="leader-title">🏆 Leaderboard</div><div id="leaderboard">Scores laden...</div></div>
+            <div id="display-sentence">🔄 Laden...</div>
+            <input type="text" id="answer"> <button onclick="checkAnswer()">Controleer</button>
         </div>
         <script type="module">
             import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
             import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-            const firebaseConfig = { apiKey: "AIzaSyA3_rzoZOWytlyAbYKKe_WuFlD8z2WvbX4", databaseURL: "https://aangifteq2les1-default-rtdb.europe-west1.firebasedatabase.app" };
+            const firebaseConfig = { apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew", databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app", projectId: "decoroefening" };
             const app = initializeApp(firebaseConfig); const db = getDatabase(app);
             let agentName = localStorage.getItem("currentAgentName") || "Agent";
-            const sentences = [
-                { text: "De verdachte weigerde mee te werken, <span class=\"wrong-word\">hierop</span> arresteerde ik hem.", correct: "daarom" },
-                { text: "Ik zag de man rennen, <span class=\"wrong-word\">daarop</span> hield ik hem staande.", correct: "vervolgens" },
-                { text: "De man kon zich niet legitimeren, <span class=\"wrong-word\">hierop</span> kreeg hij een boete.", correct: "dus" }
-            ];
-            let idx = 0, score = 0;
-            const scoreRef = ref(db, `structuur_scores/${agentName}`);
-            document.getElementById("display-sentence").innerHTML = sentences[0].text;
-            window.checkAnswer = () => {
-                const ans = document.getElementById("answer").value.trim().toLowerCase();
-                if (ans === sentences[idx].correct) { score++; set(scoreRef, { score: score }); }
-                idx++;
-                if (idx < sentences.length) document.getElementById("display-sentence").innerHTML = sentences[idx].text;
-                else document.getElementById("display-sentence").innerHTML = "✅ Klaar! Goed gedaan.";
-                document.getElementById("answer").value = "";
-            };
-            onValue(ref(db, "structuur_scores"), (snap) => {
-                const data = snap.val() || {};
-                const sorted = Object.entries(data).sort((a,b)=>b[1].score - a[1].score);
-                let html = ""; sorted.forEach(([n,v]) => { html += `<div class="leader-row"><span>${n}</span><span>${v.score} pt</span></div>`; });
-                if(html) document.getElementById("leaderboard").innerHTML = html;
-            });
+            const sentences = [{text: "De verdachte weigerde, ... arresteerde ik hem.", correct: "daarom"}];
+            let idx = 0; document.getElementById("display-sentence").innerHTML = sentences[0].text;
+            window.checkAnswer = () => { if(document.getElementById("answer").value === sentences[idx].correct) alert("Goed!"); };
         </script>
         </body>
         </html>'></iframe>
@@ -435,47 +286,18 @@
 </main>
 
 <script>
-    // Login functie met NAVO-namen (Alpha t/m Mike)
     window.loginAndGoToPV = function() {
-        const select = document.getElementById("agentNameSelect");
-        const selectedName = select.value;
-        if (!selectedName) {
-            document.getElementById("loginError").innerText = "Kies een geldige roepnaam (Alpha t/m Mike)";
-            return;
-        }
-        // Opslaan in localStorage
+        const selectedName = document.getElementById("agentNameSelect").value;
+        if (!selectedName) { document.getElementById("loginError").innerText = "Kies een naam"; return; }
         localStorage.setItem("currentAgentName", selectedName);
-        // Ga naar scherm 3 (PV Simulatie)
         showScreen(3);
-        // Herlaad iframe zodat de agentnaam wordt gebruikt (zachte herlaad)
-        const iframe = document.getElementById("pvSimFrame");
-        if (iframe) {
-            iframe.srcdoc = iframe.srcdoc; // herladen met nieuwe context
-        }
     };
     
     function showScreen(nr) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById('screen' + nr).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.querySelectorAll('.nav-item')[nr-1].classList.add('active');
-        
-        // Als scherm 3 en naam niet gekozen, stuur terug naar login? Optioneel
-        if (nr === 3 && !localStorage.getItem("currentAgentName")) {
-            if (confirm("Je bent nog niet ingelogd. Kies eerst een agentnaam.")) {
-                showScreen(2);
-            }
-        }
+        document.querySelectorAll('.nav-item').forEach((n, i) => n.classList.toggle('active', i === nr-1));
     }
-    
-    // Eventueel bij start checken of naam al bestaat
-    window.onload = () => {
-        if (localStorage.getItem("currentAgentName")) {
-            const select = document.getElementById("agentNameSelect");
-            if(select) select.value = localStorage.getItem("currentAgentName");
-        }
-    };
 </script>
 </body>
 </html>
-```
